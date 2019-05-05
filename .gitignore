@@ -1,0 +1,8 @@
+*.pyc
+*.out
+
+data/
+dist/
+build/
+__pycache__/
+chipseq.egg-info
