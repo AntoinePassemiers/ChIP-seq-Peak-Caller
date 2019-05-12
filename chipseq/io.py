@@ -57,18 +57,36 @@ class BedGraphIO:
         return chromosomes
 
     @staticmethod
-    def write(called_peaks_list, filepath):
+    def write(called_peaks_list, filepath, sort=True, top=None):
         """Writes called peaks to a bedGraph-formatted text file.
 
         Parameters:
             called_peaks_list (list): List of `CalledPeaks` objects.
             filepath (str): Location of bedGraph file.
+            sort (bool): Whether to sort peaks by order of decreasing score.
+            top (int): Number of top predictions to save.
+                If value is None, then no restriction will be applied
+                on the number of peaks.
         """
+        entries = list()
+        for called_peaks in called_peaks_list:
+            name = called_peaks.name
+            for i in range(len(called_peaks)):
+                start = called_peaks.start_positions[i]
+                end = called_peaks.end_positions[i]
+                score = called_peaks.score[i]
+                if not np.isinf(score):
+                    entries.append((name, start, end, score))
+
+        # If required, sort by score in decreasing order
+        if sort:
+            entries = sorted(entries, key=lambda x: -x[3])
+
+        # Check the number of top peaks to save
+        n_top = len(entries) if top is None else top
+
+        # Save called peaks
         with open(filepath, 'w') as f:
-            for called_peaks in called_peaks_list:
-                name = called_peaks.name
-                for i in range(len(called_peaks)):
-                    start = called_peaks.start_positions[i]
-                    end = called_peaks.end_positions[i]
-                    score = called_peaks.score[i]
-                    f.write('%s\t%i\t%i\t%f\n' % (name, start, end, score))
+            for entry in entries[:n_top]:
+                #f.write('%s&\t%i&\t%i&\t%f\\\\\n' % entry)
+                f.write('%s\t%i\t%i\t%f\n' % entry)
